@@ -15,8 +15,8 @@ cmd_test() {
        server_is_booted ${CURRENT_CHE_SERVER_CONTAINER_ID}; then
 
         # Not loaded as part of the init process to save on download time
-        update_image_if_not_found eclipse/che-test:nightly
-        docker_run -it eclipse/che-test:nightly "$@"
+        load_utilities_images_if_not_done
+        docker_run -it ${UTILITY_IMAGE_CHETEST} "$@"
 
        return
     fi
