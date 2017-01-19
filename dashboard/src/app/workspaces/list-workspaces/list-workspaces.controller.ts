@@ -12,6 +12,7 @@
 import {CheAPI} from '../../../components/api/che-api.factory';
 import {CheNotification} from '../../../components/notification/che-notification.factory';
 import {CheWorkspace} from '../../../components/api/che-workspace.factory';
+import {ConfirmDialogService} from '../../../components/service/confirm-dialog/confirm-dialog.service';
 
 /**
  * @ngdoc controller
@@ -42,17 +43,20 @@ export class ListWorkspacesCtrl {
   isBulkChecked: boolean;
   isNoSelected: boolean;
 
+  private confirmDialogService: ConfirmDialogService;
+
   /**
    * Default constructor that is using resource
    * @ngInject for Dependency injection
    */
-  constructor($log: ng.ILogService, $mdDialog: ng.material.IDialogService, $q: ng.IQService, $rootScope: che.IRootScopeService, cheAPI: CheAPI, cheNotification: CheNotification, cheWorkspace: CheWorkspace) {
+  constructor($log: ng.ILogService, $mdDialog: ng.material.IDialogService, $q: ng.IQService, $rootScope: che.IRootScopeService, cheAPI: CheAPI, cheNotification: CheNotification, cheWorkspace: CheWorkspace, confirmDialogService: ConfirmDialogService) {
     this.cheAPI = cheAPI;
     this.$q = $q;
     this.$log = $log;
     this.$mdDialog = $mdDialog;
     this.cheNotification = cheNotification;
     this.cheWorkspace = cheWorkspace;
+    this.confirmDialogService = confirmDialogService;
 
     this.state = 'loading';
     this.isInfoLoading = true;
@@ -302,24 +306,18 @@ export class ListWorkspacesCtrl {
 
   /**
    * Show confirmation popup before workspaces to delete
-   * @param {Number} numberToDelete
+   * @param numberToDelete{number}
    * @returns {ng.IPromise<any>}
    */
   showDeleteWorkspacesConfirmation(numberToDelete: number): ng.IPromise<any> {
-    let confirmTitle = 'Would you like to delete ';
+    let content = 'Would you like to delete ';
     if (numberToDelete > 1) {
-      confirmTitle += 'these ' + numberToDelete + ' workspaces?';
+      content += 'these ' + numberToDelete + ' workspaces?';
     } else {
-      confirmTitle += 'this selected workspace?';
+      content += 'this selected workspace?';
     }
-    let confirm = this.$mdDialog.confirm()
-      .title(confirmTitle)
-      .ariaLabel('Remove workspaces')
-      .ok('Delete!')
-      .cancel('Cancel')
-      .clickOutsideToClose(true);
 
-    return this.$mdDialog.show(confirm);
+    return this.confirmDialogService.showConfirmDialog('Remove workspaces', content, 'Delete');
   }
 
 }
