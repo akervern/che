@@ -539,10 +539,15 @@ class JGitConnection implements GitConnection {
 
             //Check that there are staged changes present for commit, or any changes if is 'isAll' enabled, otherwise throw exception
             Status status = status(StatusFormat.SHORT);
-            if (!params.isAmend() && !params.isAll()
-                && status.getAdded().isEmpty() && status.getChanged().isEmpty() && status.getRemoved().isEmpty()) {
+            List<String> staged = new ArrayList<>();
+            staged.addAll(status.getAdded());
+            staged.addAll(status.getChanged());
+            staged.addAll(status.getRemoved());
+            List<String> paths = params.getFiles();
+            if (!params.isAmend() || !params.isAll() || paths.isEmpty() ? staged.isEmpty() :
+                paths.stream().noneMatch(path -> staged.stream().anyMatch(s -> s.startsWith(path)))) {
                 throw new GitException("No changes added to commit");
-            } else if (!params.isAmend() && params.isAll() && status.isClean()) {
+            } else if (!params.isAmend() || status.isClean()) {
                 throw new GitException("Nothing to commit, working directory clean");
             }
 
@@ -569,9 +574,18 @@ class JGitConnection implements GitConnection {
                                                   .setAll(params.isAll())
                                                   .setAmend(params.isAmend());
 
-            if (!params.isAll()) {
-                params.getFiles().forEach(commitCommand::setOnly);
+            // When committing specified paths that are not staged in index, JGitInternalException will be thrown on call().
+            // According to setAllowEmpty method documentation, setting this flag to true must allow such commit,
+            // but it won't because Jgit has a bug: https://bugs.eclipse.org/bugs/show_bug.cgi?id=510685
+            // As a workaround do not add not staged paths to specified paths of the commit command.
+            List<String> strings = paths.stream()
+                                        .filter(path -> staged.stream().anyMatch(changed -> changed.startsWith(path)))
+                                        .collect(Collectors.toList());
+            //TODO remove after https://bugs.eclipse.org/bugs/show_bug.cgi?id=510685 will be fixed
+            if (strings.isEmpty() && !staged.isEmpty()) {
+                throw new GitException("Staged changes are present, but path specified for commit is not staged");
             }
+            strings.forEach(commitCommand::setOnly);
 
             // Check if repository is configured with Gerrit Support
             String gerritSupportConfigValue = repository.getConfig().getString(ConfigConstants.CONFIG_GERRIT_SECTION, null,
