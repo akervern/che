@@ -396,7 +396,7 @@ start() {
   set -- "${@/\-\-debug/}"
   
   # Begin product-specific CLI calls
-  info "cli" "Loading cli..."
+  log "cli" "Loading cli..."
 
 
   # The pre_init method is unique to each assembly. This method must be provided by 
