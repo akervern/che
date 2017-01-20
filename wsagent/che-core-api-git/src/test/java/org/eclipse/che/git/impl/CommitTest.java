@@ -186,6 +186,26 @@ public class CommitTest {
     }
 
     @Test(dataProvider = "GitConnectionFactory", dataProviderClass = org.eclipse.che.git.impl.GitConnectionFactoryProvider.class,
+          expectedExceptions = GitException.class, expectedExceptionsMessageRegExp = "No changes added to commit")
+    public void testCommitWithSpecifiedNotStagedChanges(GitConnectionFactory connectionFactory) throws GitException, IOException {
+        //given
+        GitConnection connection = connectToGitRepositoryWithContent(connectionFactory, repository);
+        //Prepare unstaged deletion
+        addFile(connection, "FileToDelete.txt", "content");
+        connection.add(AddParams.create(ImmutableList.of("FileToDelete.txt")));
+        connection.commit(CommitParams.create("File to delete"));
+        new File(connection.getWorkingDir().getAbsolutePath(), "FileToDelete.txt").delete();
+        //Prepare unstaged new file
+        addFile(connection, "newFile", "content");
+        //Prepare staged editing
+        write(new File(connection.getWorkingDir(), "README.txt").toPath(), "new content".getBytes());
+        connection.add(AddParams.create(ImmutableList.of("README.txt")));
+
+        //when
+        connection.commit(CommitParams.create("test commit").withFiles(singletonList("newFile")));
+    }
+
+    @Test(dataProvider = "GitConnectionFactory", dataProviderClass = org.eclipse.che.git.impl.GitConnectionFactoryProvider.class,
           expectedExceptions = GitException.class, expectedExceptionsMessageRegExp = "Nothing to commit, working directory clean")
     public void testCommitWithCleanIndex(GitConnectionFactory connectionFactory) throws GitException, IOException {
         //given
