@@ -190,14 +190,9 @@ public class CommitTest {
     public void testCommitWithSpecifiedNotStagedChanges(GitConnectionFactory connectionFactory) throws GitException, IOException {
         //given
         GitConnection connection = connectToGitRepositoryWithContent(connectionFactory, repository);
-        //Prepare unstaged deletion
-        addFile(connection, "FileToDelete.txt", "content");
-        connection.add(AddParams.create(ImmutableList.of("FileToDelete.txt")));
-        connection.commit(CommitParams.create("File to delete"));
-        new File(connection.getWorkingDir().getAbsolutePath(), "FileToDelete.txt").delete();
-        //Prepare unstaged new file
+        //Prepare unstaged new file that will be present in specified paths for commit
         addFile(connection, "newFile", "content");
-        //Prepare staged editing
+        //Prepare staged editing that will not be present in specified paths for commit
         write(new File(connection.getWorkingDir(), "README.txt").toPath(), "new content".getBytes());
         connection.add(AddParams.create(ImmutableList.of("README.txt")));
 
