@@ -32,7 +32,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import elemental.dom.Element;
-import elemental.dom.Node;
 import elemental.html.TableCellElement;
 import elemental.html.TableElement;
 import org.eclipse.che.api.project.shared.dto.ItemReference;
@@ -95,6 +94,7 @@ public class NavigateToFileViewImpl extends PopupPanel implements NavigateToFile
         setAutoHideEnabled(true);
         setAnimationEnabled(true);
         getElement().getStyle().setProperty("boxShadow", "0 2px 4px 0 rgba(0, 0, 0, 0.50)");
+        getElement().getStyle().setProperty("borderRadius", "0px");
     }
 
     @Override
@@ -116,7 +116,6 @@ public class NavigateToFileViewImpl extends PopupPanel implements NavigateToFile
                     @Override
                     public void run() {
                         getElement().getStyle().setProperty("clip", "auto");
-
                         delegate.onFileNameChanged(fileName.getText());
                     }
                 }.schedule(300);
@@ -129,6 +128,16 @@ public class NavigateToFileViewImpl extends PopupPanel implements NavigateToFile
                 fileName.setFocus(true);
             }
         });
+
+        // Add window resize handler
+        if (resizeHandler == null) {
+            resizeHandler = Window.addResizeHandler(new ResizeHandler() {
+                @Override
+                public void onResize(ResizeEvent event) {
+                    updatePositionAndSize();
+                }
+            });
+        }
     }
 
     private final SimpleList.ListItemRenderer<ItemReference> listItemRenderer =
@@ -181,27 +190,12 @@ public class NavigateToFileViewImpl extends PopupPanel implements NavigateToFile
             suggestionsPanel.getElement().getStyle().setWidth(400, Style.Unit.PX);
             suggestionsPanel.getElement().getStyle().setHeight(20, Style.Unit.PX);
 
-            if (resizeHandler != null) {
-                resizeHandler.removeHandler();
-                resizeHandler = null;
-            }
-
             return;
         }
 
         // Show popup
         suggestionsPanel.setVisible(true);
         suggestionsContainer.getElement().setInnerHTML("");
-
-        // Add window resize handler
-        if (resizeHandler == null) {
-            resizeHandler = Window.addResizeHandler(new ResizeHandler() {
-                @Override
-                public void onResize(ResizeEvent event) {
-                    updatePositionAndSize();
-                }
-            });
-        }
 
         // Create and show list of items
         final TableElement itemHolder = Elements.createTableElement();
@@ -220,13 +214,14 @@ public class NavigateToFileViewImpl extends PopupPanel implements NavigateToFile
     }
 
     private void updatePositionAndSize() {
-        if (!suggestionsPanel.isVisible()) {
-            return;
-        }
-
         // Update position
         setPopupPosition((com.google.gwt.user.client.Window.getClientWidth() / 2) - (getOffsetWidth() / 2),
                 (com.google.gwt.user.client.Window.getClientHeight() / 4) - (getOffsetHeight() / 2));
+
+        // Exit if suggestions is not shown
+        if (!suggestionsPanel.isVisible()) {
+            return;
+        }
 
         // Update popup width
         int width = suggestionsContainer.getElement().getFirstChildElement().getOffsetWidth();

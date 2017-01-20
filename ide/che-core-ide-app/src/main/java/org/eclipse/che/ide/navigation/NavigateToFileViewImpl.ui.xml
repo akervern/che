@@ -50,8 +50,12 @@
             font-family: "Open Sans", sans-serif;
         }
 
+        .noborder tr > td:first-child {
+            padding-left: 3px;
+        }
+
         .noborder tr > td:last-child {
-            padding-right: 0px;
+            padding-right: 3px;
         }
 
         .noborder table {
